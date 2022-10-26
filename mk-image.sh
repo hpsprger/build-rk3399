@@ -11,6 +11,22 @@ BOARD=""
 
 PATH=$PATH:$TOOLPATH
 
+# partitions.sh里面计算出了各个区的起始位置与大小
+# LOADER1_SIZE=8000
+# RESERVED1_SIZE=128
+# RESERVED2_SIZE=8192
+# LOADER2_SIZE=8192
+# ATF_SIZE=8192
+# BOOT_SIZE=1048576
+# 
+# SYSTEM_START=0
+# LOADER1_START=64
+# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})
+# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE})
+# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})
+# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})
+# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})
+# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})
 source $LOCALPATH/build/partitions.sh
 
 usage() {
@@ -23,6 +39,8 @@ finish() {
 }
 trap finish ERR
 
+# 脚本中的命令 ==> ./build/mk-image.sh -c rk3399 -t boot -b rockpi4b
+# 命令行中输入的参数  赋值到对应的变量中去 
 OLD_OPTIND=$OPTIND
 while getopts "c:t:r:b:h" flag; do
 	case $flag in
@@ -42,10 +60,14 @@ while getopts "c:t:r:b:h" flag; do
 done
 OPTIND=$OLD_OPTIND
 
+# "${EXTLINUXPATH}/${CHIP}.conf" ==> /home/hpsp/rock_space/rockpi_4b/rockchip-bsp/build/extlinux/rk3399.conf
+# 判断这个文件是否存在 ==> [ -f FILE ] 如果 FILE 存在且是一个普通文件则为真
+# 下面的判断则是这个文件不存在的话
 if [ ! -f "${EXTLINUXPATH}/${CHIP}.conf" ]; then
 	CHIP="rk3288"
 fi
 
+# $CHIP  $TARGET 有一个为空 就是错误
 if [ ! $CHIP ] && [ ! $TARGET ]; then
 	usage
 	exit
@@ -55,6 +77,7 @@ if [[ "${CHIP}" == "rk3308" ]]; then
 	source $LOCALPATH/build/rockpis-partitions.sh
 fi
 
+# 下面有调用 generate_boot_image这个函数的地方 
 generate_boot_image() {
 	BOOT=${OUT}/boot.img
 	rm -rf ${BOOT}
@@ -64,11 +87,19 @@ generate_boot_image() {
 	if [[ "${CHIP}" == "rk3308" ]]; then
 		# 100MB
 		mkfs.vfat -n "boot" -S 512 -C ${BOOT} $((100 * 1024))
-	else
-		# 500Mb
+	else #rk3399 走这个分支
+		# 500Mb 
+		# man mkfs.vfat
+		# -n 指定名字 
+		# -S Specify the number of bytes per logical sector.
+		# -C  Create the file given as DEVICE on the command line, and write the to-be-created filesystem to it.  This can be used to create the new filesystem in a file instead of on a real device, and to  avoid using dd in advance to create a file of appropriate size.
+		# 创建这个镜像文件 500M 
 		mkfs.vfat -n "boot" -S 512 -C ${BOOT} $((500 * 1024))
 	fi
-
+    
+	# Linux mmd命令用于在MS-DOS文件系统中建立目录
+	# man mmd
+	# 反正就是在这个镜像中填充对应的镜像，最后要给windows那个烧录工具烧写到SD卡上去的
 	mmd -i ${BOOT} ::/extlinux
 	if [ "${BOARD}" == "rockpi4a" ] || [ "${BOARD}" == "rockpi4b" ] ||  [ "${BOARD}" == "rockpis" ] ; then
 		mmd -i ${BOOT} ::/overlays
@@ -177,6 +208,8 @@ EOF
 	dd if=${ROOTFS_PATH} of=${SYSTEM} conv=notrunc,fsync seek=${ROOTFS_START}
 }
 
+
+# ./build/mk-image.sh -c rk3399 -t boot -b rockpi4b ==> -t ==> TARGET 为 boot ==> 调用函数 generate_boot_image 
 if [ "$TARGET" = "boot" ]; then
 	generate_boot_image
 elif [ "$TARGET" == "system" ]; then
