@@ -170,6 +170,7 @@ sed -e "s,fdt .*,fdt /$DTB,g" \
 	-i ${EXTLINUXPATH}/${CHIP}.conf
 
 # 镜像打包
+# ./build/mk-image.sh -c rk3399 -t boot -b rockpi4b
 ./build/mk-image.sh -c ${CHIP} -t boot -b ${BOARD}
 
 echo -e "\e[36m Kernel build success! \e[0m"
