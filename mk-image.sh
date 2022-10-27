@@ -1,5 +1,9 @@
 #!/bin/bash -e
 
+# 编译内核时mk-kernel.sh 中调用该脚本的命令 ==>  ./build/mk-image.sh -c rk3399 -t boot    -b rockpi4b      ==> ./build/mk-image.sh -c ${CHIP} -t boot -b ${BOARD}
+# rootfs做好了之后，再执行该脚本的命令      ==> 1: build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img
+#                                               2: build/mk-image.sh -c rk3399 -b rockpi4 -t system  -r rootfs/linaro-rootfs.img
+
 LOCALPATH=$(pwd)
 OUT=${LOCALPATH}/out
 TOOLPATH=${LOCALPATH}/rkbin/tools
@@ -77,7 +81,8 @@ if [[ "${CHIP}" == "rk3308" ]]; then
 	source $LOCALPATH/build/rockpis-partitions.sh
 fi
 
-# 下面有调用 generate_boot_image这个函数的地方 
+# 编译内核的脚本中，在内核编译完后，会执行该脚本 ==> -t boot ==> 会调用 generate_boot_image这个函数 
+# 编译内核时mk-kernel.sh 中调用该脚本的命令 ==>  ./build/mk-image.sh -c rk3399 -t boot    -b rockpi4b      ==> ./build/mk-image.sh -c ${CHIP} -t boot -b ${BOARD}
 generate_boot_image() {
 	BOOT=${OUT}/boot.img
 	rm -rf ${BOOT}
@@ -111,6 +116,9 @@ generate_boot_image() {
 	echo -e "\e[36m Generate Boot image : ${BOOT} success! \e[0m"
 }
 
+# rootfs做好了后会执行该脚本 ==> -t boot ==> 会调用 generate_system_image 这个函数 
+# rootfs做好了之后，再执行该脚本的命令      ==> 1: build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img
+#                                               2: build/mk-image.sh -c rk3399 -b rockpi4 -t system  -r rootfs/linaro-rootfs.img
 generate_system_image() {
 	if [ ! -f "${OUT}/boot.img" ]; then
 		echo -e "\e[31m CAN'T FIND BOOT IMAGE \e[0m"
@@ -124,7 +132,7 @@ generate_system_image() {
 		exit
 	fi
 
-	SYSTEM=${OUT}/system.img
+	SYSTEM=${OUT}/system.img  # 最终的大系统的镜像名称
 	rm -rf ${SYSTEM}
 
 	echo "Generate System image : ${SYSTEM} !"
