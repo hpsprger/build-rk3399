@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash 
+
+set -e # Exit the script if an error happens
 
 export ARCH=arm
 export CROSS_COMPILE=arm-linux-gnueabihf-
@@ -6,6 +8,9 @@ export CROSS_COMPILE=arm-linux-gnueabihf-
 LOCALPATH=$(pwd)
 
 TOPDIR=${LOCALPATH}/..
+
+ROOTFS_BUILD=$1
+RELEASE=buster
 
 finish() {
 	echo -e "\e[31m build all failed.\e[0m"
@@ -21,9 +26,8 @@ echo -e "\e[32m build uboot done ...\e[0m"
 ./build/mk-kernel.sh rockpi4b
 echo -e "\e[32m build kernel done ...\e[0m"
 
-
-
-if [ ! -e ${TOPDIR}/rootfs/ubuntu-build-service/buster-desktop-arm64/linaro-$RELEASE-alip-*.tar.gz ]; then
+set +e
+if [ $ROOTFS_BUILD ];  then
 	cd ${TOPDIR}/rootfs
 	export ARCH=arm64
 	sudo apt-get install binfmt-support qemu-user-static gdisk
@@ -35,6 +39,7 @@ if [ ! -e ${TOPDIR}/rootfs/ubuntu-build-service/buster-desktop-arm64/linaro-$REL
 else
 	echo -e "\e[32m  rootfs already ok  ...\e[0m"
 fi
+set -e
 
 cd ${TOPDIR}
 # Generate system image with two partitions
