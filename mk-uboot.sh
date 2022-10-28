@@ -124,6 +124,7 @@ EOF
 elif [ "${CHIP}" == "rk3399" ]; then  # 走这个分支 CHIP="rk3399"
 	# $TOOLPATH ==> TOOLPATH=${LOCALPATH}/rkbin/tools 
 	# loaderimage 这个工具是rockchip自己写的一个工具，暂且就认为它把 ./u-boot-dtb.bin 转换为了 uboot.img 镜像了哈，可能它在镜像的前面添加了一个头，包含了些  指定的信息
+	# uboot.img = RK头 + u-boot-dtb.bin
 	$TOOLPATH/loaderimage --pack --uboot ./u-boot-dtb.bin uboot.img 0x200000 --size 1024 1
     
 	# uboot源代码的tools 目录下有mkimage工具，这个工具可以用来制作不压缩或者压缩的多种可启动镜像文件。 
@@ -152,12 +153,14 @@ elif [ "${CHIP}" == "rk3399" ]; then  # 走这个分支 CHIP="rk3399"
 	# rk3399_miniloader_v1.19.bin ==> 瑞芯微修改的一个bootloader,可以理解成spl,运⾏在 ddr 中，负责完成系统的 lowlevel 初始化、后级固件加载（trust.img 和 uboot.img）
 	# 通过 cat命令将这个镜像拼接到idbloader.img镜像的末尾，形成一个统一的镜像 idbloader.img 
 	cat ../rkbin/bin/rk33/rk3399_miniloader_v1.19.bin >> idbloader.img
+	# idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
 	# 将idbloader.img 拷贝到 ${OUT}/u-boot/ 目录下
 	cp idbloader.img ${OUT}/u-boot/
 
 	# 下面的流程是与上面类似的，做出来的镜像 是 给 spinor flash 使用的
 	tools/mkimage -n rk3399 -T rkspi -d ../rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin idbloader-spi.img
 	cat ../rkbin/bin/rk33/rk3399_miniloader_spinor_v1.14.bin >> idbloader-spi.img
+	# idbloader-spi.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_spinor_v1.14.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
 	# 将idbloader-spi.img 拷贝到 ${OUT}/u-boot/ 目录下
 	cp idbloader-spi.img ${OUT}/u-boot/spi
 
@@ -169,6 +172,7 @@ elif [ "${CHIP}" == "rk3399" ]; then  # 走这个分支 CHIP="rk3399"
 	# 模拟输入，创建一个 trust.ini 的文件，trust_merger 用这个配置文件来生成镜像trust.img 
 	# 通过各个阶段 BL30 BL31 BL32 BL33 的 SEC配置， 配置各个阶段的镜像是否 输出到 trust.img镜像中，
 	# 下面的配置文件 指定 安全启动镜像trust.img 中只包含了BL31 ATF的镜像文件:rkbin/bin/rk33/rk3399_bl31_v1.26.elf，且这个镜像存放在0x10000
+	# trust.img = rkbin/bin/rk33/rk3399_bl31_v1.26.elf
 	cat >trust.ini <<EOF
 [VERSION]
 MAJOR=1

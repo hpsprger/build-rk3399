@@ -81,8 +81,9 @@ if [[ "${CHIP}" == "rk3308" ]]; then
 	source $LOCALPATH/build/rockpis-partitions.sh
 fi
 
-# 编译内核的脚本中，在内核编译完后，会执行该脚本 ==> -t boot ==> 会调用 generate_boot_image这个函数 
+# 编译内核的脚本中，在内核编译完后，会执行该脚本 ==> ./build/mk-image.sh -c ${CHIP} -t boot -b ${BOARD} ==> -t boot ==> 会调用 generate_boot_image这个函数 
 # 编译内核时mk-kernel.sh 中调用该脚本的命令 ==>  ./build/mk-image.sh -c rk3399 -t boot    -b rockpi4b      ==> ./build/mk-image.sh -c ${CHIP} -t boot -b ${BOARD}
+# 这个函数的作用就是生成镜像 boot.img，并 将 rk3399.conf 与 ${OUT}/kernel/* 目录下的所有拷贝到 ${OUT}/boot.img 这个镜像文件系统中去 
 generate_boot_image() {
 	BOOT=${OUT}/boot.img
 	rm -rf ${BOOT}
@@ -98,18 +99,24 @@ generate_boot_image() {
 		# -n 指定名字 
 		# -S Specify the number of bytes per logical sector.
 		# -C  Create the file given as DEVICE on the command line, and write the to-be-created filesystem to it.  This can be used to create the new filesystem in a file instead of on a real device, and to  avoid using dd in advance to create a file of appropriate size.
-		# 创建这个镜像文件 500M 
+		# 创建boot.img镜像文件，大小500M 
 		mkfs.vfat -n "boot" -S 512 -C ${BOOT} $((500 * 1024))
 	fi
     
 	# Linux mmd命令用于在MS-DOS文件系统中建立目录
-	# man mmd
-	# 反正就是在这个镜像中填充对应的镜像，最后要给windows那个烧录工具烧写到SD卡上去的
+	# man mmd ==> mmd - make an MSDOS subdirectory
+	# mmd [-D clash_option] msdosdirectory [ msdosdirectories... ]
+	# -i 猜测就是指定对应的目标镜像，也就是在这个镜像的文件系统中进行操作 
 	mmd -i ${BOOT} ::/extlinux
 	if [ "${BOARD}" == "rockpi4a" ] || [ "${BOARD}" == "rockpi4b" ] ||  [ "${BOARD}" == "rockpis" ] ; then
 		mmd -i ${BOOT} ::/overlays
 	fi
-
+    
+	# man mcopy ==> mcopy - copy MSDOS files to/from Unix
+	# mcopy [-bspanvmQT] [-D clash_option] sourcefile targetfile  ==> sourcefile to targetfile
+	# s ==> Recursive copy.  Also copies directories and their contents
+	# -i 猜测就是指定对应的目标镜像，也就是在这个镜像的文件系统中进行操作
+	# 下面就是将 rk3399.conf 与 ${OUT}/kernel/* 目录下的所有拷贝到 ${OUT}/boot.img 这个镜像文件系统中去 
 	mcopy -i ${BOOT} -s ${EXTLINUXPATH}/${CHIP}.conf ::/extlinux/extlinux.conf
 	mcopy -i ${BOOT} -s ${OUT}/kernel/* ::
 
@@ -119,6 +126,7 @@ generate_boot_image() {
 # rootfs做好了后会执行该脚本 ==> -t boot ==> 会调用 generate_system_image 这个函数 
 # rootfs做好了之后，再执行该脚本的命令      ==> 1: build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img
 #                                               2: build/mk-image.sh -c rk3399 -b rockpi4 -t system  -r rootfs/linaro-rootfs.img
+# 这个函数的作用就是生成镜像system.img，并 将 rk3399.conf 与 ${OUT}/kernel/* 目录下的所有拷贝到 ${OUT}/boot.img 这个镜像文件系统中去 
 generate_system_image() {
 	if [ ! -f "${OUT}/boot.img" ]; then
 		echo -e "\e[31m CAN'T FIND BOOT IMAGE \e[0m"
@@ -159,18 +167,19 @@ generate_system_image() {
 	# ATF_SIZE=8192
 	# BOOT_SIZE=1048576
 	# 
-	# SYSTEM_START=0
-	# LOADER1_START=64
-	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})
-	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE})
-	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})
-	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})
-	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})
-	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})
+	# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)
+	# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)
+	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)
+	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)
+	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)
+	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)
+	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)
+	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)
 	# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
+	# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 	GPTIMG_MIN_SIZE=$(expr $IMG_ROOTFS_SIZE + \( ${LOADER1_SIZE} + ${RESERVED1_SIZE} + ${RESERVED2_SIZE} + ${LOADER2_SIZE} + ${ATF_SIZE} + ${BOOT_SIZE} + 35 \) \* 512)
 	GPT_IMAGE_SIZE=$(expr $GPTIMG_MIN_SIZE \/ 1024 \/ 1024 + 2)
-
+	
 	# 通过dd命令 生成一个镜像文件 ==> SYSTEM=${OUT}/system.img
 	# if = 文件名：输入文件名，缺省为标准输入。即指定源文件。< if = input file >
 	# of = 文件名：输出文件名，缺省为标准输入。即指定目的文件。 < of = output file >
@@ -183,6 +192,7 @@ generate_system_image() {
 	# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 	# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
 	# https://blog.csdn.net/qq_33141353/article/details/119748202?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-3-119748202-blog-89007666.pc_relevant_recovery_v2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-3-119748202-blog-89007666.pc_relevant_recovery_v2&utm_relevant_index=6
+	# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 	dd if=/dev/zero of=${SYSTEM} bs=1M count=0 seek=$GPT_IMAGE_SIZE
 
 	# parted 用于对磁盘(或RAID磁盘)进行分区及管理，与fdisk分区工具相比，支持2TB以上的磁盘分区，并且允许调整分区的大小
@@ -203,8 +213,9 @@ generate_system_image() {
 	#                mkpart [part-type name fs-type] start end ==> Create  a  new  partition. part-type may be specified only with msdos and dvh partition tables, it should be one of "primary", "logical", or "extended".  name is required for GPT partition tables and fs-type is optional.  fs-type can be one of "btrfs", "ext2", "ext3", "ext4", "fat16", "fat32", "hfs", "hfs+", "linux-swap", "ntfs", "reiserfs", "udf", or "xfs"
 	#                set partition flag state ==> Change the state of the flag on partition to state.  Supported flags are: "boot", "root", "swap", "hidden", "raid", "lvm", "lba", "legacy_boot", "irst", "msftres", "esp", "chromeos_kernel"  and "palo".  state should be either "on" or "off".
 	#                
-	if [ "$BOARD" == "rockpi4" ]; then  # -b rockpi4 ==> $BOARD ==> 有指定的时候 
+	if [ "$BOARD" == "rockpi4" ]; then  # -b rockpi4 ==> $BOARD ==> 有指定的时候 ==> build/mk-image.sh -c rk3399 -b rockpi4 -t system  -r rootfs/linaro-rootfs.img
 	    # ${SYSTEM} ==> SYSTEM=${OUT}/system.img
+		# 解析见下面，一样的
 		parted -s ${SYSTEM} mklabel gpt
 		parted -s ${SYSTEM} unit s mkpart loader1 ${LOADER1_START} $(expr ${RESERVED1_START} - 1)
 		# parted -s ${SYSTEM} unit s mkpart reserved1 ${RESERVED1_START} $(expr ${RESERVED2_START} - 1)
@@ -214,10 +225,16 @@ generate_system_image() {
 		parted -s ${SYSTEM} unit s mkpart boot ${BOOT_START} $(expr ${ROOTFS_START} - 1)
 		parted -s ${SYSTEM} set 4 boot on
 		parted -s ${SYSTEM} -- unit s mkpart rootfs ${ROOTFS_START} -34s
-	else   # $BOARD ==>  没有指定的时候                
+	else   # $BOARD ==>  没有指定的时候 ==> 只有2个分区 ==> build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img          
+		# ${SYSTEM} ==> SYSTEM=${OUT}/system.img
 		parted -s ${SYSTEM} mklabel gpt
-		parted -s ${SYSTEM} unit s mkpart boot ${BOOT_START} $(expr ${ROOTFS_START} - 1)
+		# ROOTFS_START  = 32768 + 1048576  ==> 1081344(0x108000)
+		# ROOTFS_START - 1 ==> 1081313(0x107FFF)
+		# BOOT_START    = 24576 + 8192     ==> 32768  (0x8000)
+		# 创建一个分区==>名字为boot 起始-结束:BOOT_START-(ROOTFS_START-1)==>0x8000 - 0x107FFF
+		parted -s ${SYSTEM} unit s mkpart boot ${BOOT_START} $(expr ${ROOTFS_START} - 1) 
 		parted -s ${SYSTEM} set 1 boot on
+		# 创建一个分区==>名字为rootfs 起始-结束:ROOTFS_START- -34s??    ==>0x108000 - ???	
 		parted -s ${SYSTEM} -- unit s mkpart rootfs ${ROOTFS_START} -34s
 	fi
      
@@ -259,7 +276,7 @@ EOF
 	rk322x | rk3036 )
 		dd if=${OUT}/u-boot/idbloader.img of=${SYSTEM} seek=${LOADER1_START} conv=notrunc
 		;;
-	px30 | rk3288 | rk3308 | rk3328 | rk3399 | rk3399pro )
+	px30 | rk3288 | rk3308 | rk3328 | rk3399 | rk3399pro ) 	# rk3399走这个分支
 		# partitions.sh里面计算出了各个区的起始位置与大小
 		# LOADER1_SIZE=8000
 		# RESERVED1_SIZE=128
@@ -268,22 +285,29 @@ EOF
 		# ATF_SIZE=8192
 		# BOOT_SIZE=1048576
 		# 
-		# SYSTEM_START=0
-		# LOADER1_START=64
-		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})
-		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE})
-		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})
-		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})
-		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})
-		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})
-		# rk3399走这个分支 
+		# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)
+		# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)
+		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)
+		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)
+		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)
+		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)
+		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)
+		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)
+		# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
+		# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 		# dd 的使用上面也有讲解
 		# 这里通过dd 将 idbloader.img   trust.img  uboot.img 这几个镜像 写入到镜像文件中去 
 		# conv = conversion：用指定的参数转换文件； notrunc：不截短输出文件； ascii：转换ebcdic为ascii等等 
 		# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 		# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
+		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
+	    # idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
 		dd if=${OUT}/u-boot/idbloader.img of=${SYSTEM} seek=${LOADER1_START} conv=notrunc
+		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
+		# uboot.img = RK头 + u-boot-dtb.bin
 		dd if=${OUT}/u-boot/uboot.img of=${SYSTEM} seek=${LOADER2_START} conv=notrunc
+		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
+		# trust.img = rkbin/bin/rk33/rk3399_bl31_v1.26.elf
 		dd if=${OUT}/u-boot/trust.img of=${SYSTEM} seek=${ATF_START} conv=notrunc
 		;;
 	*)
@@ -292,20 +316,21 @@ EOF
 
 	# burn boot image
 	# dd 的使用上面也有讲解
-	# 这里通过dd 将 boot.img 这几个镜像 写入到镜像文件中去 
 	# conv = conversion：用指定的参数转换文件； notrunc：不截短输出文件； ascii：转换ebcdic为ascii等等 
 	# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 	# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
+	# generate_boot_image==>生成镜像 boot.img，并 将 rk3399.conf 与 ${OUT}/kernel/* 目录下的所有拷贝到 ${OUT}/boot.img 这个镜像文件系统中去 
+	# 通过dd 将 boot.img写入到最终的大镜像的指定的位置BOOT_START上去
 	dd if=${OUT}/boot.img of=${SYSTEM} conv=notrunc seek=${BOOT_START}
 
 	# burn rootfs image
 	# dd 的使用上面也有讲解
-	# 这里通过dd 将 boot.img 这几个镜像 写入到镜像文件中去 
 	# conv = conversion：用指定的参数转换文件； notrunc：不截短输出文件； ascii：转换ebcdic为ascii等等 
 	# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 	# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
 	# ${ROOTFS_PATH}  ==>  -r rootfs/linaro-rootfs.img 
 	# ${SYSTEM}  ==>  ${OUT}/system.img  # 最终的大系统的镜像名称
+	# 通过dd 将 linaro-rootfs.img 写入到最终的大镜像的指定的位置ROOTFS_START上去
 	dd if=${ROOTFS_PATH} of=${SYSTEM} conv=notrunc,fsync seek=${ROOTFS_START}
 }
 
