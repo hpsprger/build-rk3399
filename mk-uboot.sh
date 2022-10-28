@@ -229,7 +229,7 @@ PartSize=0x800
 EOF
 	$TOOLPATH/firmwareMerger -P spi.ini ${OUT}/u-boot/spi
 	# Firmware.img 改名为uboot-trust-spi.img，并保存到${OUT}/u-boot/spi/uboot-trust-spi.img 
-	# uboot-trust-spi.img ==> 包含了三个部分: IDBlock + trust.img + uboot.img
+	# uboot-trust-spi.img ==> 包含了三个部分: IDBlock + trust.img + uboot.img，每个部分的存放位置见上面的分析 
 	#     IDBlock   ==> 包含了../rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【初始化DDR的代码镜像】 +  ../rkbin/bin/rk33/rk3399_miniloader_spinor_v1.14.bin【SPL:加载BL31的ATF镜像】
 	#     trust.img ==> 如上分析 只包含了BL31 ATF的镜像文件:rkbin/bin/rk33/rk3399_bl31_v1.26.elf【ATF镜像】
 	#     uboot.img ==> 包含加了个uboot头的 u-boot-dtb.bin 【u-boot加载内核用的镜像】
