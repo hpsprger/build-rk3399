@@ -221,6 +221,8 @@ generate_system_image() {
 	if [ "$BOARD" == "rockpi4" ]; then  # -b rockpi4 ==> $BOARD ==> 有指定的时候 ==> build/mk-image.sh -c rk3399 -b rockpi4 -t system  -r rootfs/linaro-rootfs.img
 	    # ${SYSTEM} ==> SYSTEM=${OUT}/system.img
 		# 解析见下面，一样的
+		# ！！！！ 这里为什么要创建这些分区呢？？？且这些分区的起始扇区都是与上面的规划对应的上的，所以这里面创建这些分区就是为了后面通过dd将这个分区对应的
+		# 镜像写到这个分区上来哈，所以bootrom后面就可以直接通过读裸磁盘的方式，读取对应的分区所在的扇区就可以读到这个分区上的数据了，完美！！！！！
 		parted -s ${SYSTEM} mklabel gpt
 		parted -s ${SYSTEM} unit s mkpart loader1 ${LOADER1_START} $(expr ${RESERVED1_START} - 1)
 		# parted -s ${SYSTEM} unit s mkpart reserved1 ${RESERVED1_START} $(expr ${RESERVED2_START} - 1)
@@ -230,7 +232,9 @@ generate_system_image() {
 		parted -s ${SYSTEM} unit s mkpart boot ${BOOT_START} $(expr ${ROOTFS_START} - 1)
 		parted -s ${SYSTEM} set 4 boot on
 		parted -s ${SYSTEM} -- unit s mkpart rootfs ${ROOTFS_START} -34s
-	else   # $BOARD ==>  没有指定的时候 ==> 只有2个分区 ==> build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img          
+	else   # $BOARD ==>  没有指定的时候 ==> 只有2个分区 ==> build/mk-image.sh -c rk3399 -t system  -r rootfs/linaro-rootfs.img     
+		# ！！！！ 这里为什么要创建这些分区呢？？？且这些分区的起始扇区都是与上面的规划对应的上的，所以这里面创建这些分区就是为了后面通过dd将这个分区对应的
+		# 镜像写到这个分区上来哈，所以bootrom后面就可以直接通过读裸磁盘的方式，读取对应的分区所在的扇区就可以读到这个分区上的数据了，完美！！！！！	
 		# ${SYSTEM} ==> SYSTEM=${OUT}/system.img
 		parted -s ${SYSTEM} mklabel gpt
 		# ROOTFS_START  = 32768 + 1048576  ==> 1081344(0x108000)
