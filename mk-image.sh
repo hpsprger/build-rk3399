@@ -23,14 +23,16 @@ PATH=$PATH:$TOOLPATH
 # ATF_SIZE=8192
 # BOOT_SIZE=1048576
 # 
-# SYSTEM_START=0
-# LOADER1_START=64
-# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})
-# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE})
-# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})
-# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})
-# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})
-# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})
+# 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
+# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64
+# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)      【第0个分区】
+# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)     【第64个分区】
+# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)   【第8064个分区】
+# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)   【第8192个分区】
+# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)   【第16384个分区】
+# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)   【第24576个分区】
+# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)   【第32768个分区】
+# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000) 【第1081344个分区】
 source $LOCALPATH/build/partitions.sh
 
 usage() {
@@ -167,14 +169,16 @@ generate_system_image() {
 	# ATF_SIZE=8192
 	# BOOT_SIZE=1048576
 	# 
-	# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)
-	# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)
-	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)
-	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)
-	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)
-	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)
-	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)
-	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)
+	# 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
+	# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64	
+	# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)      【第0个分区】
+	# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)     【第64个分区】
+	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)   【第8064个分区】
+	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)   【第8192个分区】
+	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)   【第16384个分区】
+	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)   【第24576个分区】
+	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)   【第32768个分区】
+	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000) 【第1081344个分区】
 	# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
 	# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 	GPTIMG_MIN_SIZE=$(expr $IMG_ROOTFS_SIZE + \( ${LOADER1_SIZE} + ${RESERVED1_SIZE} + ${RESERVED2_SIZE} + ${LOADER2_SIZE} + ${ATF_SIZE} + ${BOOT_SIZE} + 35 \) \* 512)
@@ -285,14 +289,16 @@ EOF
 		# ATF_SIZE=8192
 		# BOOT_SIZE=1048576
 		# 
-		# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)
-		# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)
-		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)
-		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)
-		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)
-		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)
-		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)
-		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)
+		# 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
+		# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64
+		# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)     【第0个分区】
+		# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)    【第64个分区】
+		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)  【第8064个分区】
+		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)  【第8192个分区】
+		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)  【第16384个分区】
+		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)  【第24576个分区】
+		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)  【第32768个分区】
+		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)【第1081344个分区】
 		# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
 		# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 		# dd 的使用上面也有讲解
