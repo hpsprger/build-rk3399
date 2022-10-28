@@ -25,14 +25,15 @@ PATH=$PATH:$TOOLPATH
 # 
 # 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
 # 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64
-# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)      【第0个分区】
-# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)     【第64个分区】
-# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)   【第8064个分区】
-# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)   【第8192个分区】
-# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)   【第16384个分区】
-# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)   【第24576个分区】
-# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)   【第32768个分区】
-# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000) 【第1081344个分区】
+# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)     【第0个分区】      ==>MBR
+# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)    【第64个分区】     ==>idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
+# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)  【第8064个分区】   ==>RESERVED1
+# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)  【第8192个分区】   ==>RESERVED2
+# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)  【第16384个分区】  ==>uboot.img  = uboot.img = RK头 + u-boot-dtb.bin
+# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)  【第24576个分区】  ==>trust.img  = rkbin/bin/rk33/rk3399_bl31_v1.26.elf【ATF】
+# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)  【第32768个分区】  ==>boot.img   = rk3399.conf+${OUT}/kernel/*
+# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)【第1081344个分区】==>rootfs/linaro-rootfs.img
+
 source $LOCALPATH/build/partitions.sh
 
 usage() {
@@ -170,15 +171,15 @@ generate_system_image() {
 	# BOOT_SIZE=1048576
 	# 
 	# 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
-	# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64	
-	# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)      【第0个分区】
-	# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)     【第64个分区】
-	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)   【第8064个分区】
-	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)   【第8192个分区】
-	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)   【第16384个分区】
-	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)   【第24576个分区】
-	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)   【第32768个分区】
-	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000) 【第1081344个分区】
+	# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64
+	# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)     【第0个分区】      ==>MBR
+	# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)    【第64个分区】     ==>idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
+	# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)  【第8064个分区】   ==>RESERVED1
+	# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)  【第8192个分区】   ==>RESERVED2
+	# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)  【第16384个分区】  ==>uboot.img  = uboot.img = RK头 + u-boot-dtb.bin
+	# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)  【第24576个分区】  ==>trust.img  = rkbin/bin/rk33/rk3399_bl31_v1.26.elf【ATF】
+	# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)  【第32768个分区】  ==>boot.img   = rk3399.conf+${OUT}/kernel/*
+	# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)【第1081344个分区】==>rootfs/linaro-rootfs.img
 	# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
 	# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 	GPTIMG_MIN_SIZE=$(expr $IMG_ROOTFS_SIZE + \( ${LOADER1_SIZE} + ${RESERVED1_SIZE} + ${RESERVED2_SIZE} + ${LOADER2_SIZE} + ${ATF_SIZE} + ${BOOT_SIZE} + 35 \) \* 512)
@@ -291,14 +292,14 @@ EOF
 		# 
 		# 下面的这些各个起始扇区号就是大一统镜像${OUT}/system.img 中 各个子镜像的存放的起始扇区号
 		# 验证方法:hexdump idbloader.img -n 10 -v -C ==> hexdump system.img -v -C | grep "3b 8c dc fc be 9f 9d 51  eb 30"  ==> 查找结果是 00008000  3b 8c dc fc be 9f 9d 51  eb 30 34 ce 24 51 1f 98  |;......Q.04.$Q..| ==> 00008000是偏移地址，对应的扇区号就是64
-		# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)     【第0个分区】
-		# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)    【第64个分区】
-		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)  【第8064个分区】
-		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)  【第8192个分区】
-		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)  【第16384个分区】
-		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)  【第24576个分区】
-		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)  【第32768个分区】
-		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)【第1081344个分区】
+		# SYSTEM_START=0                                                 ==> SYSTEM_START    = 0                ==> 0      (0x0)     【第0个分区】      ==>MBR
+		# LOADER1_START=64                                               ==> LOADER1_START   = 64               ==> 64     (0x40)    【第64个分区】     ==>idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
+		# RESERVED1_START=$(expr ${LOADER1_START} + ${LOADER1_SIZE})     ==> RESERVED1_START = 64   + 8000      ==> 8064   (0x1F80)  【第8064个分区】   ==>RESERVED1
+		# RESERVED2_START=$(expr ${RESERVED1_START} + ${RESERVED1_SIZE}) ==> RESERVED2_START = 8064 + 128       ==> 8192   (0x2000)  【第8192个分区】   ==>RESERVED2
+		# LOADER2_START=$(expr ${RESERVED2_START} + ${RESERVED2_SIZE})   ==> LOADER2_START   = 8192 + 8192      ==> 16384  (0x4000)  【第16384个分区】  ==>uboot.img  = uboot.img = RK头 + u-boot-dtb.bin
+		# ATF_START=$(expr ${LOADER2_START} + ${LOADER2_SIZE})           ==> ATF_START       = 16384 + 8192     ==> 24576  (0x6000)  【第24576个分区】  ==>trust.img  = rkbin/bin/rk33/rk3399_bl31_v1.26.elf【ATF】
+		# BOOT_START=$(expr ${ATF_START} + ${ATF_SIZE})                  ==> BOOT_START      = 24576 + 8192     ==> 32768  (0x8000)  【第32768个分区】  ==>boot.img   = rk3399.conf+${OUT}/kernel/*
+		# ROOTFS_START=$(expr ${BOOT_START} + ${BOOT_SIZE})              ==> ROOTFS_START    = 32768 + 1048576  ==> 1081344(0x108000)【第1081344个分区】==>rootfs/linaro-rootfs.img
 		# 下面的这两句话就是计算出了 GPTIMG_MIN_SIZE GPT_IMAGE_SIZE 这个值的大小
 		# 通过实际打印 GPTIMG_MIN_SIZE=4046575104(0xF131D600)  GPT_IMAGE_SIZE=3861(0xF15)
 		# dd 的使用上面也有讲解
@@ -306,14 +307,14 @@ EOF
 		# conv = conversion：用指定的参数转换文件； notrunc：不截短输出文件； ascii：转换ebcdic为ascii等等 
 		# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 		# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
-		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
+		# idbloader.img ==> uboot 构建脚本里面制作的
 	    # idbloader.img = uboot头 + rkbin/bin/rk33/rk3399_ddr_800MHz_v1.20.bin【TPL】 + rkbin/bin/rk33/rk3399_miniloader_v1.19.bin【SPL】 ==> TPL:负责完成ddr初始化；SPL:负责完成系统的lowlevel初始化、后级固件加载（trust.img 和 uboot.img）；
 		dd if=${OUT}/u-boot/idbloader.img of=${SYSTEM} seek=${LOADER1_START} conv=notrunc
-		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
+		# uboot.img ==> uboot 构建脚本里面制作的
 		# uboot.img = RK头 + u-boot-dtb.bin
 		dd if=${OUT}/u-boot/uboot.img of=${SYSTEM} seek=${LOADER2_START} conv=notrunc
-		# ${OUT}/u-boot/idbloader.img ==> uboot 构建脚本里面制作的
-		# trust.img = rkbin/bin/rk33/rk3399_bl31_v1.26.elf
+		# trust.img ==> uboot 构建脚本里面制作的
+		# trust.img = rkbin/bin/rk33/rk3399_bl31_v1.26.elf【ATF】
 		dd if=${OUT}/u-boot/trust.img of=${SYSTEM} seek=${ATF_START} conv=notrunc
 		;;
 	*)
@@ -326,6 +327,7 @@ EOF
 	# skip = blocks：从输入文件开头跳过blocks个块后再开始复制
 	# seek = blocks：从输出文件开头跳过blocks个块后才开始复制；注意：通常只用当输出文件是磁盘或磁带时才有效，即备份到磁盘或磁带时才有效
 	# generate_boot_image==>生成镜像 boot.img，并 将 rk3399.conf 与 ${OUT}/kernel/* 目录下的所有拷贝到 ${OUT}/boot.img 这个镜像文件系统中去 
+	# boot.img = rk3399.conf + ${OUT}/kernel/*
 	# 通过dd 将 boot.img写入到最终的大镜像的指定的位置BOOT_START上去
 	dd if=${OUT}/boot.img of=${SYSTEM} conv=notrunc seek=${BOOT_START}
 
