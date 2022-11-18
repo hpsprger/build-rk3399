@@ -9,14 +9,43 @@ LOCALPATH=$(pwd)
 
 TOPDIR=${LOCALPATH}/..
 
-ROOTFS_BUILD=$1
+KERNEL_V=$1
+ROOTFS_BUILD=$2
 RELEASE=buster
 
 finish() {
+	# 判断是是否kernel 4.x 还是 5.x 的内核版本
+	if [ "${KERNEL_V}" == "k5" ]; then
+		echo "resume env for kernel 5 used...."
+		mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
+		mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
+	else
+		echo "resume env for kernel 4 used...."
+	fi
 	echo -e "\e[31m build all failed.\e[0m"
 	exit -1
 }
 trap finish ERR
+
+# 判断是是否kernel 4.x 还是 5.x 的内核版本
+if [ "${KERNEL_V}" == "k5" ]; then
+	echo "using kernel 5 ...."
+	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_4_4_154
+	mv ${TOPDIR}/kernel_5_10_149  ${TOPDIR}/kernel
+else
+	echo "using kernel 4 ...."
+fi
+
+# 判断是是否kernel 4.x 还是 5.x 的内核版本
+if [ "${KERNEL_V}" == "k5" ]; then
+	echo "using kernel 5 ...."
+	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
+	mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
+else
+	echo "using kernel 4 ...."
+fi
+
+exit
 
 cd ${TOPDIR}
 
