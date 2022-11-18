@@ -1,5 +1,13 @@
 #!/bin/bash 
 
+
+# ./build_all.sh            ==> 默认使用4.4的内核版本
+# ./build_all.sh  k5        ==> 默认使用5.10的内核版本
+# ./build_all.sh  k4 rooffs ==> 默认使用4.4的内核版本,  带上rooffs参数表示会重新制作 debian文件系统
+# ./build_all.sh  k5 rooffs ==> 默认使用5.10的内核版本, 带上rooffs参数表示会重新制作 debian文件系统
+
+# Exit the script if an error happens
+
 set -e # Exit the script if an error happens
 
 export ARCH=arm
