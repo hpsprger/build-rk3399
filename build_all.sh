@@ -36,15 +36,6 @@ else
 	echo "using kernel 4 ...."
 fi
 
-# 判断是是否kernel 4.x 还是 5.x 的内核版本
-if [ "${KERNEL_V}" == "k5" ]; then
-	echo "using kernel 5 ...."
-	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
-	mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
-else
-	echo "using kernel 4 ...."
-fi
-
 cd ${TOPDIR}
 
 ./build/mk-uboot.sh rockpi4b
@@ -75,4 +66,13 @@ build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
 # Generate ROCK Pi 4 system image with five partitions.
 # build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
 
+# 判断是是否kernel 4.x 还是 5.x 的内核版本
+if [ "${KERNEL_V}" == "k5" ]; then
+	echo "resume env for kernel 5 used...."
+	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
+	mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
+else
+	echo "resume env for kernel 4 used...."
+fi
+	
 echo -e "\e[36m all READY! \e[0m"
