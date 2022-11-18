@@ -45,8 +45,6 @@ else
 	echo "using kernel 4 ...."
 fi
 
-exit
-
 cd ${TOPDIR}
 
 ./build/mk-uboot.sh rockpi4b
