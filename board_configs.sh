@@ -78,10 +78,12 @@ case ${BOARD} in
 		if [ "${KERNEL_V}" == "k5" ]; then
 			echo "board_config using kernel 5 ...."
 			DTB_MAINLINE=rk3399-rock-pi-4b.dtb
+			DEFCONFIG_MAINLINE=rockchip_linux_defconfig
 		else
 			echo "board_config using kernel 4 ...."
 			# original config 
 			DTB_MAINLINE=rk3399-rock-pi-4.dtb
+			DEFCONFIG_MAINLINE=defconfig
 		fi
 		export ARCH=arm64
 		export CROSS_COMPILE=aarch64-linux-gnu-
