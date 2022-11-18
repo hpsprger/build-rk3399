@@ -138,7 +138,10 @@ fi
 #
 #      configuration written to .config
 #
+# 编译 4.4.x  的内核时： make ${DEFCONFIG} ==> make  rockchip_linux_defconfig 
+# 编译 5.10.x 的内核时： make ${DEFCONFIG} ==> make  defconfig
 cd ${LOCALPATH}/kernel
+echo -e "\e[36m Using ${DEFCONFIG} \e[0m"
 [ ! -e .config ] && echo -e "\e[36m Using ${DEFCONFIG} \e[0m" && make ${DEFCONFIG}
 
 # 开始编译内核
