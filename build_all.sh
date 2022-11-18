@@ -13,6 +13,8 @@ KERNEL_V=$1
 ROOTFS_BUILD=$2
 RELEASE=buster
 
+export KERNEL_V
+
 finish() {
 	# 判断是是否kernel 4.x 还是 5.x 的内核版本
 	if [ "${KERNEL_V}" == "k5" ]; then
