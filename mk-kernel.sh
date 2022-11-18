@@ -138,8 +138,10 @@ fi
 #
 #      configuration written to .config
 #
-# 编译 4.4.x  的内核时： make ${DEFCONFIG} ==> make  rockchip_linux_defconfig 
-# 编译 5.10.x 的内核时： make ${DEFCONFIG} ==> make  defconfig
+# export ARCH=arm64
+# export CROSS_COMPILE=aarch64-linux-gnu-
+# 编译 4.4.x  的内核时： make ${DEFCONFIG} ==> make  rockchip_linux_defconfig  ==> arch/arm64/configs/rockchip_linux_defconfig
+# 编译 5.10.x 的内核时： make ${DEFCONFIG} ==> make  defconfig                 ==> arch/arm64/configs/defconfig
 cd ${LOCALPATH}/kernel
 echo -e "\e[36m Using ${DEFCONFIG} \e[0m"
 [ ! -e .config ] && echo -e "\e[36m Using ${DEFCONFIG} \e[0m" && make ${DEFCONFIG}
