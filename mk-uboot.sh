@@ -55,6 +55,16 @@ echo -e "\e[36m Using ${UBOOT_DEFCONFIG} \e[0m"
 
 cd ${LOCALPATH}/u-boot
 # 编译uboot
+# make   rock-pi-4b-rk3399_defconfig  all  
+# make 编译的时候，make 命令中是可以后面跟多个目标的，比如 
+# make -f makefile  tst1  tst2
+# 1111
+# 2222
+# makefile:
+#  tst1:
+#          @echo 1111
+#  tst2:
+#          @echo 2222
 make ${UBOOT_DEFCONFIG} all
 
 if  [ "${CHIP}" == "rk322x" ] || [ "${CHIP}" == "rk3036" ]; then
