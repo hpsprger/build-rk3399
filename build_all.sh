@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 
-# ./build_all.sh            ==> 默认使用4.4的内核版本
+# ./build_all.sh            ==> 默认使用5.10的内核版本
 # ./build_all.sh  k5        ==> 默认使用5.10的内核版本
 # ./build_all.sh  k4 rootfs ==> 默认使用4.4的内核版本,  带上 rootfs 参数表示会重新制作 debian文件系统
 # ./build_all.sh  k5 rootfs ==> 默认使用5.10的内核版本, 带上 rootfs 参数表示会重新制作 debian文件系统
@@ -25,25 +25,26 @@ export KERNEL_V
 
 finish() {
 	# 判断是是否kernel 4.x 还是 5.x 的内核版本
-	if [ "${KERNEL_V}" == "k5" ]; then
+	if [ "${KERNEL_V}" == "k4" ]; then
 		echo "resume env for kernel 5 used...."
-		mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
-		mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
+		mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_4
+		mv ${TOPDIR}/kernel_5_10_149 ${TOPDIR}/kernel
+		echo "resume env for kernel 5 used done ...."	
 	else
-		echo "resume env for kernel 4 used...."
+		echo "env for kernel 5 used...."
 	fi
 	echo -e "\e[31m build all failed.\e[0m"
 	exit -1
 }
-trap finish ERR
+trap finish ERR HUP INT QUIT TERM
 
 # 判断是是否kernel 4.x 还是 5.x 的内核版本
-if [ "${KERNEL_V}" == "k5" ]; then
-	echo "using kernel 5 ...."
-	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_4_4_154
-	mv ${TOPDIR}/kernel_5_10_149  ${TOPDIR}/kernel
-else
+if [ "${KERNEL_V}" == "k4" ]; then
 	echo "using kernel 4 ...."
+	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149
+	mv ${TOPDIR}/kernel_4  ${TOPDIR}/kernel
+else
+	echo "using kernel 5 ...."
 fi
 
 cd ${TOPDIR}
@@ -77,12 +78,12 @@ build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
 # build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
 
 # 判断是是否kernel 4.x 还是 5.x 的内核版本
-if [ "${KERNEL_V}" == "k5" ]; then
-	echo "resume env for kernel 5 used...."
-	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_5_10_149 
-	mv ${TOPDIR}/kernel_4_4_154 ${TOPDIR}/kernel  			
-else
+if [ "${KERNEL_V}" == "k4" ]; then
 	echo "resume env for kernel 4 used...."
+	mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_4
+	mv ${TOPDIR}/kernel_5_10_149 ${TOPDIR}/kernel  			
+else
+	echo "resume env for kernel 5 used...."
 fi
 	
 echo -e "\e[36m all READY! \e[0m"

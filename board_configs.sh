@@ -75,15 +75,15 @@ case ${BOARD} in
 		DEFCONFIG_MAINLINE=defconfig
 		UBOOT_DEFCONFIG=rock-pi-4b-rk3399_defconfig
 		DTB=rk3399-rock-pi-4b.dtb
-		if [ "${KERNEL_V}" == "k5" ]; then
-			echo "board_config using kernel 5 ...."
-			DTB_MAINLINE=rk3399-rock-pi-4b.dtb
-			DEFCONFIG_MAINLINE=rockchip_linux_defconfig
-		else
+		if [ "${KERNEL_V}" == "k4" ]; then
 			echo "board_config using kernel 4 ...."
 			# original config 
 			DTB_MAINLINE=rk3399-rock-pi-4.dtb
 			DEFCONFIG_MAINLINE=defconfig
+		else
+			echo "board_config using kernel 5 ...."
+			DTB_MAINLINE=rk3399-rock-pi-4b.dtb
+			DEFCONFIG_MAINLINE=rockchip_linux_defconfig
 		fi
 		export ARCH=arm64
 		export CROSS_COMPILE=aarch64-linux-gnu-
