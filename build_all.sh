@@ -8,7 +8,8 @@
 
 # Exit the script if an error happens
 
-set -e # Exit the script if an error happens
+# set -eE #-E 设定之后 ERR 陷阱会被 shell 函数继承
+set -eE # Exit the script if an error happens
 
 export ARCH=arm
 export CROSS_COMPILE=arm-linux-gnueabihf-
@@ -26,12 +27,12 @@ export KERNEL_V
 finish() {
 	# 判断是是否kernel 4.x 还是 5.x 的内核版本
 	if [ "${KERNEL_V}" == "k4" ]; then
-		echo "resume env for kernel 5 used...."
+		echo "resume env for kernel 4 used...."
 		mv ${TOPDIR}/kernel  ${TOPDIR}/kernel_4
 		mv ${TOPDIR}/kernel_5_10_149 ${TOPDIR}/kernel
-		echo "resume env for kernel 5 used done ...."	
+		echo "resume env for kernel 4 used done ...."	
 	else
-		echo "env for kernel 5 used...."
+		echo "resume env for kernel 5 used...."
 	fi
 	echo -e "\e[31m build all failed.\e[0m"
 	exit -1
@@ -55,20 +56,28 @@ echo -e "\e[32m build uboot done ...\e[0m"
 ./build/mk-kernel.sh rockpi4b
 echo -e "\e[32m build kernel done ...\e[0m"
 
-set +e
+set +eE
+trap ''  ERR HUP INT QUIT TERM #因为文件系统处理过程中可能有依赖异常，所以临时要忽略错误退出 与 异常信号捕获的相关处理，后面再恢复即可
 if [ $ROOTFS_BUILD ];  then
 	cd ${TOPDIR}/rootfs
 	export ARCH=arm64
+	echo step-----111
 	sudo apt-get install binfmt-support qemu-user-static gdisk
+	echo step-----222
+	# dpkg -i 是用来安装后面跟的软件包用的
+	# 官方的注释如下右侧，让忽略 各个失败的依赖项
 	sudo dpkg -i ubuntu-build-service/packages/*        # ignore the broken dependencies, we will fix it next step
+	echo step-----333
 	sudo apt-get install -f
 	RELEASE=buster TARGET=desktop ARCH=${ARCH} ./mk-base-debian.sh
+	echo step-----444
 	VERSION=debug ARCH=${ARCH} ./mk-rootfs-buster.sh  && ./mk-image.sh
 	echo -e "\e[32m  rootfs done  ...\e[0m"
 else
 	echo -e "\e[32m  rootfs already ok  ...\e[0m"
 fi
-set -e
+set -eE
+trap finish ERR HUP INT QUIT TERM
 
 cd ${TOPDIR}
 # Generate system image with two partitions
