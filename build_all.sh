@@ -74,6 +74,7 @@ if [ $ROOTFS_BUILD ];  then
 	echo step-----444
 	VERSION=debug ARCH=${ARCH} ./mk-rootfs-buster.sh  && ./mk-image.sh
 	echo -e "\e[32m  rootfs done  ...\e[0m"
+	echo step-----555
 else
 	echo -e "\e[32m  rootfs already ok  ...\e[0m"
 fi
@@ -82,9 +83,10 @@ set -eE # Exit the script if an error happens
 trap finish ERR HUP INT QUIT TERM
 
 cd ${TOPDIR}
+echo step-----666
 # Generate system image with two partitions
 build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
-
+echo step-----777
 # Generate ROCK Pi 4 system image with five partitions.
 # build/mk-image.sh -c rk3399 -t system -r rootfs/linaro-rootfs.img
 
