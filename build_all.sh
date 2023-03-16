@@ -72,7 +72,7 @@ else
 	echo -e "\e[32m skip build uboot ...\e[0m"
 fi
 
-if [ "${KERNEL_V}" == "c_k5" ] && [ "${KERNEL_V}" == "c_k4" ]; then 
+if [ "${KERNEL_V}" == "c_k5" ] || [ "${KERNEL_V}" == "c_k4" ]; then 
 	./build/mk-kernel.sh rockpi4b
 	echo -e "\e[32m build kernel done ...\e[0m"
 else
@@ -112,6 +112,13 @@ else
 	echo -e "\e[32m  skip create rootfs buster  ...\e[0m"
 fi
 
+if [ "${CPY_MY_KO}" == "cp_ko" ]; then
+	${TOPDIR}/build/copy_my_ko.sh
+	echo -e "\e[32m  copy my debug ko to rootfs done  ...\e[0m"
+else
+	echo -e "\e[32m  shipping copy my debug ko to rootfs done  ...\e[0m"
+fi
+
 if [ "${CRT_IMG}" == "c_rtfs_img" ]; then
 	VERSION=debug ARCH=${ARCH} ./mk-image.sh
 	echo -e "\e[32m  create rootfs img(linaro-rootfs.img) done  ...\e[0m"
@@ -122,7 +129,6 @@ fi
 # set -eE #-E 设定之后 ERR 陷阱会被 shell 函数继承
 set -eE # Exit the script if an error happens
 trap finish ERR HUP INT QUIT TERM
-
 
 if [ "${CRT_SYS_IMG}" == "c_sys_img" ]; then
 	cd ${TOPDIR}
