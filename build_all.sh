@@ -56,7 +56,8 @@ echo -e "\e[32m build uboot done ...\e[0m"
 ./build/mk-kernel.sh rockpi4b
 echo -e "\e[32m build kernel done ...\e[0m"
 
-set +eE
+# set +eE #-E 设定之后 ERR 陷阱会被 shell 函数继承
+set +eE # +e ==> donot Exit the script if an error happens
 trap ''  ERR HUP INT QUIT TERM #因为文件系统处理过程中可能有依赖异常，所以临时要忽略错误退出 与 异常信号捕获的相关处理，后面再恢复即可
 if [ $ROOTFS_BUILD ];  then
 	cd ${TOPDIR}/rootfs
@@ -76,7 +77,8 @@ if [ $ROOTFS_BUILD ];  then
 else
 	echo -e "\e[32m  rootfs already ok  ...\e[0m"
 fi
-set -eE
+# set -eE #-E 设定之后 ERR 陷阱会被 shell 函数继承
+set -eE # Exit the script if an error happens
 trap finish ERR HUP INT QUIT TERM
 
 cd ${TOPDIR}
