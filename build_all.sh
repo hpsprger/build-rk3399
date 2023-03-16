@@ -120,6 +120,7 @@ else
 fi
 
 if [ "${CRT_IMG}" == "c_rtfs_img" ]; then
+	cd ${TOPDIR}/rootfs
 	VERSION=debug ARCH=${ARCH} ./mk-image.sh
 	echo -e "\e[32m  create rootfs img(linaro-rootfs.img) done  ...\e[0m"
 else
