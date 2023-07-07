@@ -79,7 +79,7 @@ if [ "${CRT_UBOOT}" == "c_u" ]; then
 		COMPILE_TARGET_QEMM="yes"
 		cd ${TOPDIR}/u-boot 
 		branch_exist=$(git branch  | grep  "rockllee" -w)
-		if ["${branch_exist}" == ""]; then
+		if [ "${branch_exist}" == "" ]; then
 			echo "git checkout -b rockllee  origin/rockllee"
 			git checkout -b rockllee  origin/rockllee
 		else
@@ -92,12 +92,12 @@ if [ "${CRT_UBOOT}" == "c_u" ]; then
 	elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
 		echo "compile for rockpi4b board ...."
 		branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w)
-		if ["${branch_exist}" == ""]; then
+		if [ "${branch_exist}" == "" ]; then
 			echo "git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b"
 			git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b
 		else
 			cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w)
-			if ["${cur_br}" == ""]; then
+			if [ "${cur_br}" == "" ]; then
 				echo "git checkout rockllee_rockpi4b"
 				git checkout rockllee_rockpi4b
 			fi
