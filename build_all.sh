@@ -2,7 +2,7 @@
 
 
 # 参数说明
-# ./build_all.sh  $1 $2 $3 $4 $5 $6
+# ./build_all.sh  $1 $2 $3 $4 $5 $6 $7
 # 比如 ./build_all.sh c_u  c_k5  c_rtfs c_rtfs_img c_sys_img cp_ko ==> 某个参数不需要时 可以用"-"代替
 # $1 ==> 为 c_u 表明 要编译uboot, 其他的值表示不需要编译uboot 
 # $2 ==> 为 c_k5 表示用kernel 5的内核版本 
@@ -12,6 +12,8 @@
 # $4 ==> 为 c_rtfs_img 【注意这个是文件系统镜像，不是整个系统的镜像】  表示需要生成镜像linaro-rootfs.img  ，为其他的值表明不用重新生成镜像linaro-rootfs.img  
 # $5 ==> 为 c_sys_img  表示需要系统镜像，为其他的值表明不用生成系统镜像
 # $6 ==> 为 cp_ko  表示要去拷贝我的调试ko 到文件系统里面去  ，为其他的值表明不用拷贝我的调试ko 到文件系统里面去 
+# $7 ==> 为 c_qu: 因为为了调通qemu，uboot改了不少东西，其中还会uboot的启动命令这些，所以要区分对待了
+#        为 c_bd: uboot编译使用master分支，保证编译出来的东西, rockpi4b物理单板上能正常启动 
 # Exit the script if an error happens
 
 # set -eE #-E 设定之后 ERR 陷阱会被 shell 函数继承
@@ -32,6 +34,7 @@ ROOTFS_BUILD=$3
 CRT_IMG=$4
 CRT_SYS_IMG=$5
 CPY_MY_KO=$6
+COMPILE_TARGET=$7
 
 export KERNEL_V
 
@@ -61,6 +64,47 @@ elif [ "${KERNEL_V}" == "c_k5" ]; then
 	echo "using kernel 5 ...."
 else
 	echo "not compile kernel...."
+fi
+
+cd ${TOPDIR}
+
+if [ "${COMPILE_TARGET}" == "" ]; then
+	COMPILE_TARGET="c_qu"
+fi
+
+if [ "${COMPILE_TARGET}" == "c_qu" ]; then
+	echo "compile for qemu ...."
+	COMPILE_TARGET_QEMM="yes"
+	cd ${TOPDIR}/u-boot 
+
+	branch_exist=$(git branch  | grep  "rockllee" -w)
+	if ["${branch_exit}" == ""]; then
+		echo "git checkout -b rockllee  origin/rockllee"
+	    git checkout -b rockllee  origin/rockllee
+	else
+		cur_br=$(git branch  | grep  "* rockllee" -w)
+		if ["${cur_br}" == ""]; then
+			echo "git checkout rockllee"
+	   	 	git checkout rockllee
+		fi
+	fi
+elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
+	echo "compile for rockpi4b board ...."
+
+	branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w)
+	if ["${branch_exit}" == ""]; then
+		echo "git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b"
+	    git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b
+	else
+		cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w)
+		if ["${cur_br}" == ""]; then
+			echo "git checkout rockllee_rockpi4b"
+	   	 	git checkout rockllee_rockpi4b
+		fi
+	fi
+else
+	echo -e "\e[31m param err!.\e[0m"
+	exit -1
 fi
 
 cd ${TOPDIR}
