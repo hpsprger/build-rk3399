@@ -78,25 +78,25 @@ if [ "${CRT_UBOOT}" == "c_u" ]; then
 		echo "compile for qemu ...."
 		COMPILE_TARGET_QEMM="yes"
 		cd ${TOPDIR}/u-boot 
-		branch_exist=$(git branch  | grep  "rockllee" -w)
+		branch_exist=$(git branch  | grep  "rockllee" -w || echo "") # 这里为什么要加一个 || echo "" 呢？因为 "git branch  | grep  "* rockllee" -w"打印为空的时候，命令解析执行程序 认为这条命令执行错误了，所以这里要加一个echo "" ，在结果为空的的时候，输出一个空字符串，如果结果不为空的话，就不会执行echo "" 
 		if [ "${branch_exist}" == "" ]; then
 			echo "git checkout -b rockllee  origin/rockllee"
 			git checkout -b rockllee  origin/rockllee
 		else
-			cur_br=$(git branch  | grep  "* rockllee" -w)
-			if ["${cur_br}" == ""]; then
+			cur_br=$(git branch  | grep  "* rockllee" -w || echo "") # 这里为什么要加一个 || echo "" 呢？因为 "git branch  | grep  "* rockllee" -w"打印为空的时候，命令解析执行程序 认为这条命令执行错误了，所以这里要加一个echo "" ，在结果为空的的时候，输出一个空字符串，如果结果不为空的话，就不会执行echo "" 
+			if [ "${cur_br}" == "" ]; then
 				echo "git checkout rockllee"
 				git checkout rockllee
 			fi
 		fi
 	elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
 		echo "compile for rockpi4b board ...."
-		branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w)
+		branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w || echo "") # 这里为什么要加一个 || echo "" 呢？因为 "git branch  | grep  "* rockllee" -w"打印为空的时候，命令解析执行程序 认为这条命令执行错误了，所以这里要加一个echo "" ，在结果为空的的时候，输出一个空字符串，如果结果不为空的话，就不会执行echo "" 
 		if [ "${branch_exist}" == "" ]; then
 			echo "git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b"
 			git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b
 		else
-			cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w)
+			cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w || echo "") # 这里为什么要加一个 || echo "" 呢？因为 "git branch  | grep  "* rockllee" -w"打印为空的时候，命令解析执行程序 认为这条命令执行错误了，所以这里要加一个echo "" ，在结果为空的的时候，输出一个空字符串，如果结果不为空的话，就不会执行echo "" 
 			if [ "${cur_br}" == "" ]; then
 				echo "git checkout rockllee_rockpi4b"
 				git checkout rockllee_rockpi4b
