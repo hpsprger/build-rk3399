@@ -3,7 +3,9 @@
 
 # 参数说明
 # ./build_all.sh  $1 $2 $3 $4 $5 $6 $7
-# 比如 ./build_all.sh c_u  c_k5  c_rtfs c_rtfs_img c_sys_img cp_ko ==> 某个参数不需要时 可以用"-"代替
+# 比如 ./build_all.sh c_u  c_k5  c_rtfs c_rtfs_img c_sys_img cp_ko 
+# 比如 ./build_all.sh c_u  c_k5  c_rtfs c_rtfs_img c_sys_img cp_ko c_qu ==> qemu 版本全量构建
+# 比如 ./build_all.sh c_u  c_k5  c_rtfs c_rtfs_img c_sys_img cp_ko c_bd ==> rockpi4b 版本全量构建
 # $1 ==> 为 c_u 表明 要编译uboot, 其他的值表示不需要编译uboot 
 # $2 ==> 为 c_k5 表示用kernel 5的内核版本 
 #        为 c_k4 表示用kernel 4的内核版本 
