@@ -90,6 +90,7 @@ if [ "${CRT_UBOOT}" == "c_u" ]; then
 			fi
 		fi
 	elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
+		cd ${TOPDIR}/u-boot 
 		branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w || echo "") # 这里为什么要加一个 || echo "" 呢？因为 "git branch  | grep  "* rockllee" -w"打印为空的时候，命令解析执行程序 认为这条命令执行错误了，所以这里要加一个echo "" ，在结果为空的的时候，输出一个空字符串，如果结果不为空的话，就不会执行echo "" 
 		echo "compile uboot for rockpi4b board .... ==> branch_exist=${branch_exist}"
 		if [ "${branch_exist}" == "" ]; then
