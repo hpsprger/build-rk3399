@@ -68,48 +68,46 @@ fi
 
 cd ${TOPDIR}
 
-if [ "${COMPILE_TARGET}" == "" ]; then
-	COMPILE_TARGET="c_qu"
-fi
-
-if [ "${COMPILE_TARGET}" == "c_qu" ]; then
-	echo "compile for qemu ...."
-	COMPILE_TARGET_QEMM="yes"
-	cd ${TOPDIR}/u-boot 
-
-	branch_exist=$(git branch  | grep  "rockllee" -w)
-	if ["${branch_exit}" == ""]; then
-		echo "git checkout -b rockllee  origin/rockllee"
-	    git checkout -b rockllee  origin/rockllee
-	else
-		cur_br=$(git branch  | grep  "* rockllee" -w)
-		if ["${cur_br}" == ""]; then
-			echo "git checkout rockllee"
-	   	 	git checkout rockllee
-		fi
-	fi
-elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
-	echo "compile for rockpi4b board ...."
-
-	branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w)
-	if ["${branch_exit}" == ""]; then
-		echo "git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b"
-	    git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b
-	else
-		cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w)
-		if ["${cur_br}" == ""]; then
-			echo "git checkout rockllee_rockpi4b"
-	   	 	git checkout rockllee_rockpi4b
-		fi
-	fi
-else
-	echo -e "\e[31m param err!.\e[0m"
-	exit -1
-fi
-
-cd ${TOPDIR}
-
 if [ "${CRT_UBOOT}" == "c_u" ]; then
+
+	if [ "${COMPILE_TARGET}" == "" ]; then
+		COMPILE_TARGET="c_qu"
+	fi
+
+	if [ "${COMPILE_TARGET}" == "c_qu" ]; then
+		echo "compile for qemu ...."
+		COMPILE_TARGET_QEMM="yes"
+		cd ${TOPDIR}/u-boot 
+		branch_exist=$(git branch  | grep  "rockllee" -w)
+		if ["${branch_exist}" == ""]; then
+			echo "git checkout -b rockllee  origin/rockllee"
+			git checkout -b rockllee  origin/rockllee
+		else
+			cur_br=$(git branch  | grep  "* rockllee" -w)
+			if ["${cur_br}" == ""]; then
+				echo "git checkout rockllee"
+				git checkout rockllee
+			fi
+		fi
+	elif [ "${COMPILE_TARGET}" == "c_bd" ]; then
+		echo "compile for rockpi4b board ...."
+		branch_exist=$(git branch  | grep  "rockllee_rockpi4b" -w)
+		if ["${branch_exist}" == ""]; then
+			echo "git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b"
+			git checkout -b rockllee_rockpi4b  origin/rockllee_rockpi4b
+		else
+			cur_br=$(git branch  | grep  "* rockllee_rockpi4b" -w)
+			if ["${cur_br}" == ""]; then
+				echo "git checkout rockllee_rockpi4b"
+				git checkout rockllee_rockpi4b
+			fi
+		fi
+	else
+		echo -e "\e[31m param err!.\e[0m"
+		exit -1
+	fi
+
+	cd ${TOPDIR}
 	./build/mk-uboot.sh rockpi4b
 	echo -e "\e[32m build uboot done ...\e[0m"
 else
