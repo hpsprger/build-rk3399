@@ -158,7 +158,7 @@ else
 fi
 
 if [ "${CPY_MY_KO}" == "cp_ko" ]; then
-	${TOPDIR}/build/copy_my_ko.sh
+	sudo ${TOPDIR}/build/copy_my_ko.sh
 	echo -e "\e[32m  copy my debug ko to rootfs done  ...\e[0m"
 else
 	echo -e "\e[32m  shipping copy my debug ko to rootfs done  ...\e[0m"
