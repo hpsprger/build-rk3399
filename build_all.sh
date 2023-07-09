@@ -158,12 +158,12 @@ else
 fi
 
 # 下面的这个流程作废了，不用了，直接在 D:\github_all_code\rockchip-bsp\rootfs\mk-image.sh 中拷贝  
-if [ "${CPY_MY_KO}" == "cp_ko" ]; then
+# if [ "${CPY_MY_KO}" == "cp_ko" ]; then
 	# sudo ${TOPDIR}/build/copy_my_ko.sh
 	# echo -e "\e[32m  copy my debug ko to rootfs done  ...\e[0m"
-else
+# else
 	# echo -e "\e[32m  shipping copy my debug ko to rootfs done  ...\e[0m"
-fi
+# fi
 
 if [ "${CRT_IMG}" == "c_rtfs_img" ]; then
 	cd ${TOPDIR}/rootfs
